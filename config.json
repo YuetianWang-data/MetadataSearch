@@ -1,0 +1,14 @@
+{
+  "weights": {
+    "sample_data": 40,
+    "system_name": 30,
+    "table_comment": 20,
+    "field_comment": 10
+  },
+  "auto_subwords": true,
+  "subword_overrides": {
+    "总部企业": ["总部"]
+  },
+  "excluded_subwords": [],
+  "custom_words": []
+}

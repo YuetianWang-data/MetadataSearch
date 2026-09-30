@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Excel Metadata Search</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--cp-bg); color: var(--cp-text);
+      font: 15px/1.6 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; }
+    main { max-width: 1600px; margin: auto; padding: 40px 28px; }
+    header, .input-row, .result-header, .pagination { display: flex; align-items: center; gap: 12px; }
+    header, .result-header { justify-content: space-between; }
+    h1 { margin: 0; font-size: 30px; letter-spacing: -0.5px; }
+    p { margin: 4px 0; }
+    .eyebrow { font-size: 12px; letter-spacing: 2px; color: var(--cp-accent); font-weight: 700; }
+    .muted, .hint { color: var(--cp-text-muted); }
+    .hint { font-size: 13px; margin-top: 12px; }
+    .panel { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; }
+    .search-panel { padding: 24px; margin: 24px 0 16px; }
+    label { display: block; font-weight: 600; margin-bottom: 8px; }
+    input, button, select { font: inherit; padding: 10px 16px; border-radius: 0.625rem; }
+    input, select, button { background: var(--cp-surface); color: var(--cp-text); border: 1px solid var(--cp-border-strong); }
+    input { flex: 1; min-width: 0; }
+    button { cursor: pointer; }
+    button.primary { background: var(--cp-accent); color: var(--cp-accent-fg); border-color: var(--cp-accent); }
+    button.primary:hover { background: var(--cp-accent-hover); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    :focus-visible { outline: 2px solid var(--cp-accent); outline-offset: 2px; }
+    #error { color: var(--cp-danger); border: 1px solid var(--cp-danger); border-radius: 0.625rem; padding: 12px 16px; margin-bottom: 16px; }
+    .result-header { padding: 20px 24px; }
+    .result-header strong { font-size: 18px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; min-width: 1080px; table-layout: fixed; border-collapse: collapse; text-align: left; }
+    th, td { padding: 12px 16px; border-top: 1px solid var(--cp-border); vertical-align: top; overflow-wrap: anywhere; }
+    th { background: var(--cp-surface-soft); color: var(--cp-text-muted); font-size: 13px; }
+    td { white-space: pre-wrap; }
+    tbody tr:hover { background: var(--cp-bg-elevated); }
+    .code { font: 13px/1.6 Consolas, "Courier New", Courier, monospace; }
+    mark { background: var(--cp-highlight); color: var(--cp-accent); }
+    .badge { display: block; width: fit-content; margin-top: 8px; padding: 2px 6px; border-radius: 4px;
+      font-size: 11px; color: var(--cp-accent); background: var(--cp-accent-soft); }
+    .empty { text-align: center; padding: 56px 24px; color: var(--cp-text-muted); }
+    .pagination { justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--cp-border); flex-wrap: wrap; }
+    .pagination label { margin: 0; font-size: 13px; font-weight: normal; }
+    select { padding: 6px 8px; }
+    footer { color: var(--cp-text-soft); margin-top: 16px; font-size: 12px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 640px) {
+      main { padding: 24px 12px; } header { align-items: flex-start; }
+      h1 { font-size: 24px; } .search-panel { padding: 16px; } .result-header { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><p class="eyebrow">LOCAL DATA CATALOG</p><h1>Excel Metadata Search</h1>
+      <p class="muted" id="catalog-status" aria-live="polite">Loading catalog...</p></div>
+    <button id="reload" type="button">Reload files</button>
+  </header>
+  <section class="panel search-panel">
+    <form id="search-form">
+      <label for="query">Search keywords</label>
+      <div class="input-row">
+        <input id="query" maxlength="200" required autocomplete="off" placeholder="Chinese keywords, company_name, or a mixed query">
+        <button class="primary" id="search-button" type="submit">Search</button>
+      </div>
+    </form>
+    <p class="hint" id="rules">Full queries before subwords. Match count before dimension weights.</p>
+  </section>
+  <div id="error" role="alert" hidden></div>
+  <section class="panel" aria-label="Search results" id="result-panel">
+    <div class="result-header" aria-live="polite">
+      <div><strong id="result-title">Search results</strong><p class="hint" id="query-detail">Enter keywords to find tables and fields.</p></div>
+      <span class="muted" id="mode"></span>
+    </div>
+    <div class="table-wrap" id="table-wrap" hidden>
+      <table>
+        <thead><tr>
+          <th scope="col">System name</th><th scope="col">Table comment</th><th scope="col">Field comment</th>
+          <th scope="col">Sample data</th><th scope="col">Database name</th><th scope="col">Table name</th><th scope="col">Field name</th>
+        </tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="empty">Search your local Excel catalog to get started.</div>
+    <div class="pagination" id="pagination" hidden>
+      <label for="page-size">Rows per page</label>
+      <select id="page-size"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select>
+      <span id="page-info"></span><button id="previous" type="button">Previous</button><button id="next" type="button">Next</button>
+    </div>
+  </section>
+  <footer>Only the first two worksheets are read. Original field rows are preserved. Hover or focus a match badge for its explanation and source.</footer>
+</main>
+<script>
+  const $ = id => document.getElementById(id);
+  const keys = ["system_name", "table_comment", "field_comment", "sample_data", "database_name", "table_name", "field_name"];
+  let activeQuery = "", lastResult = null, busy = false;
+
+  function showError(message = "") {
+    $("error").textContent = message;
+    $("error").hidden = !message;
+  }
+  function setBusy(value) {
+    busy = value;
+    for (const id of ["search-button", "reload", "page-size", "query"]) $(id).disabled = value;
+    $("previous").disabled = value || !lastResult || lastResult.page <= 1;
+    $("next").disabled = value || !lastResult || lastResult.page >= lastResult.pages;
+    $("result-panel").setAttribute("aria-busy", String(value));
+  }
+  async function request(path, options = {}) {
+    const response = await fetch(path, {...options, signal: AbortSignal.timeout(60000)});
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+    return data;
+  }
+  function renderStatus(data) {
+    $("catalog-status").textContent = `${data.systems} systems / ${data.fields} field records`;
+    $("catalog-status").title = `${data.data_directory}\n${data.files.join("\n")}`;
+    const w = data.weights;
+    $("rules").textContent = `Full queries first, then match count and weights: sample ${w.sample_data} > system ${w.system_name} > table ${w.table_comment} > field ${w.field_comment}.`;
+  }
+  function highlight(cell, value, terms) {
+    // Never interpret workbook data as HTML.
+    const text = String(value);
+    const escaped = [...new Set(terms)].filter(Boolean).sort((a, b) => b.length - a.length)
+      .map(term => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (!escaped.length) { cell.textContent = text || "\u2014"; return; }
+    let offset = 0;
+    for (const match of text.matchAll(new RegExp(escaped.join("|"), "giu"))) {
+      cell.append(document.createTextNode(text.slice(offset, match.index)));
+      const mark = document.createElement("mark");
+      mark.textContent = match[0];
+      cell.append(mark);
+      offset = match.index + match[0].length;
+    }
+    cell.append(document.createTextNode(text.slice(offset)));
+  }
+  function render(data) {
+    lastResult = data;
+    $("result-title").textContent = `Search results / ${data.total}`;
+    $("mode").textContent = {chinese: "Chinese", english: "English", mixed: "Mixed"}[data.mode];
+    $("query-detail").textContent = `Query: ${data.query} / Subwords: ${data.subwords.join(", ") || "none"}`;
+    $("results").replaceChildren();
+    for (const item of data.items) {
+      const row = document.createElement("tr");
+      for (const key of keys) {
+        const cell = document.createElement("td");
+        if (["database_name", "table_name", "field_name"].includes(key)) cell.className = "code";
+        highlight(cell, item[key], item.matches.filter(m => m.dimension === key).flatMap(m => m.terms));
+        if (key === "system_name") {
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.tabIndex = 0;
+          badge.textContent = item.match_type;
+          badge.title = `${item.matches.map(m => `${m.label}: ${m.kind} (${m.terms.join(", ")})`).join("\n")}\nSource: ${item.source_file} / ${item.source_sheet} / row ${item.source_row}\nRank: ${item.rank.join(", ")}`;
+          badge.setAttribute("aria-label", badge.title);
+          cell.append(badge);
+        }
+        row.append(cell);
+      }
+      $("results").append(row);
+    }
+    $("table-wrap").hidden = !data.total;
+    $("empty").hidden = !!data.total;
+    $("empty").textContent = "No matching fields. Try a shorter query or adjust the subword rules.";
+    $("pagination").hidden = !data.total;
+    $("page-info").textContent = `Page ${data.page} of ${data.pages}`;
+  }
+  async function loadResults(query, page = 1) {
+    const params = new URLSearchParams({q: query, page, page_size: $("page-size").value});
+    const data = await request(`/api/search?${params}`);
+    activeQuery = data.query;
+    render(data);
+  }
+  async function search(query, page = 1) {
+    if (busy) return;
+    setBusy(true); showError();
+    $("result-title").textContent = "Searching...";
+    try {
+      await loadResults(query, page);
+    } catch (error) {
+      showError(error.message);
+      $("result-title").textContent = lastResult ? `Previous results / ${lastResult.total}` : "Search failed";
+      if (lastResult) $("page-size").value = String(lastResult.page_size);
+    } finally {
+      setBusy(false);
+    }
+  }
+  $("search-form").addEventListener("submit", event => {
+    event.preventDefault();
+    const query = $("query").value.trim();
+    if (!query) { showError("Enter a non-empty search query."); return; }
+    search(query);
+  });
+  $("previous").addEventListener("click", () => search(activeQuery, lastResult.page - 1));
+  $("next").addEventListener("click", () => search(activeQuery, lastResult.page + 1));
+  $("page-size").addEventListener("change", () => search(activeQuery));
+  $("reload").addEventListener("click", async () => {
+    if (busy) return;
+    setBusy(true); showError(); $("reload").textContent = "Reloading...";
+    try {
+      renderStatus(await request("/api/reload", {method: "POST", headers: {"X-Metadata-Request": "1"}}));
+      // Old results no longer describe the active catalog after a successful reload.
+      lastResult = null;
+      $("results").replaceChildren();
+      $("table-wrap").hidden = true; $("pagination").hidden = true; $("empty").hidden = false;
+      $("result-title").textContent = "Search results";
+      $("query-detail").textContent = "Catalog reloaded.";
+      $("mode").textContent = "";
+      $("empty").textContent = "Catalog reloaded. Enter keywords to search.";
+      if (activeQuery) await loadResults(activeQuery);
+    } catch (error) {
+      showError(error.message);
+    } finally {
+      $("reload").textContent = "Reload files";
+      setBusy(false);
+    }
+  });
+  setBusy(true);
+  request("/api/status").then(renderStatus).catch(error => {
+    $("catalog-status").textContent = "Catalog unavailable";
+    showError(error.message);
+  }).finally(() => setBusy(false));
+</script>
+</body>
+</html>

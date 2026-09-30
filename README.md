@@ -1,6 +1,6 @@
- Excel Metadata Search
+# Excel Metadata Search
 
-A Python CLI for searching Excel metadata catalogs. Returns one result per field with source details and match explanations. All processing is local; source files are never modified.
+A Python tool with CLI and local web interfaces for searching Excel metadata catalogs. Returns one result per field with source details and match explanations. All processing is local; source files are never modified.
 
 ## Usage
 
@@ -17,6 +17,17 @@ python app.py --query "企业 name" --data-dir "D:\Catalogs"
 On the current machine, use `.\.runtime\python.exe -X utf8` instead of `python`; dependencies are already installed. This local runtime is not included in the repository.
 
 `--data-dir` accepts a folder, not a file, and defaults to the project directory. Each run reloads its Excel files without searching subfolders. Results are JSON; `--help` lists all options.
+
+### Web interface
+
+```powershell
+python app.py --serve --open
+python app.py --serve --port 8766 --data-dir "D:\Catalogs"
+```
+
+The default address is http://127.0.0.1:8765/. The page provides search, seven result columns, match highlighting, pagination, and **Reload files** to reread Excel files and `config.json`. A failed reload retains the previous catalog.
+
+Use the Python server rather than opening `index.html` directly. It listens only on localhost and is not a production server. Press Ctrl+C to stop it. 
 
 ## Excel Format
 
